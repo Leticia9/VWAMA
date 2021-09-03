@@ -1,0 +1,162 @@
+##Climate Heterogeneity and its Relationship to Genetic Isolation in Vertebrates Inhabiting Western Slope of Andes
+#Cab-Sulub L. and Alvarez-Castañed ST. 
+#Centro de Investigaciones Biológicas del Noroeste 
+### This code provide information about Ecological Niche Models for vertebrate lineages
+
+library(humboldt)
+library(raster)
+
+
+setwd("E:/Documents/")
+
+env1 = read.csv("NOTyNDT/VARIABLES/Env_LiolemN.csv")
+env2 = read.csv("NOTyNDT/VARIABLES/Env_LiolemS.csv")
+
+sp1 = read.csv("NOTyNDT/Registros/Liolaemus_lemiscatus_n.csv")
+sp2 = read.csv("NOTyNDT/Registros/Liolaemus_lemiscatus_s.csv")
+
+## remove NAs and make sure all variables are imported as numbers
+env1<-humboldt.scrub.env(env1)
+env2<-humboldt.scrub.env(env2)
+
+reduc.vars<- humboldt.top.env(env1=env1,env2=env2,sp1=sp1,sp2=sp2,rarefy.dist=0, rarefy.units="km", env.reso=0.083333,learning.rt1=0.01,learning.rt2=0.01,e.var=(3:21),pa.ratio=4,steps1=10,steps2=10,method="contrib",contrib.greater=5)
+
+##Adjust the number of variables input for e.vars after reduction to only important variables
+num.var.e<-ncol(reduc.vars$env1)
+num.var.e
+
+###NOT
+##convert geographic space to e-space
+zz.NOT<-humboldt.g2e(env1=reduc.vars$env1, env2=reduc.vars$env2, sp1=sp1, sp2=sp2, reduce.env = 0, reductype = "STANDARD", non.analogous.environments = "YES", e.var=c(3:num.var.e),  col.env = e.var, env.trim= F, env.trim.type="RADIUS", trim.buffer.sp1 = 50, trim.buffer.sp2 = 50, rarefy.dist = 0, rarefy.units="km", env.reso=0.083333, kern.smooth = 1, R = 100, run.silent = F)
+
+##store espace scores for sp1 and environments 1,2 and both environments combined output from humboldt.g2e
+scores.env1<-zz.NOT$scores.env1[1:2]
+scores.env2<-zz.NOT$scores.env2[1:2]
+scores.env12<- rbind(zz.NOT$scores.env1[1:2],zz.NOT$scores.env2[1:2])
+scores.sp1<-zz.NOT$scores.sp1[1:2]
+scores.sp2<-zz.NOT$scores.sp2[1:2]
+
+## run create a grid of Environmental Space Function
+z1<- humboldt.grid.espace(scores.env12,scores.env1,scores.sp1,kern.smooth=1,R=100)
+z2<- humboldt.grid.espace(scores.env12,scores.env2,scores.sp2,kern.smooth=1,R=100)
+
+## mesure niche similarity. nae= "no" porque arriba ya se quitaron los ambientes no analogos
+NOT = humboldt.niche.similarity(z1 = z1, z2, correct.env = F, nae = "YES")
+NOT$D
+NOT$I
+
+ee<- humboldt.espace.correction(z.env1,z.env2,z.sp1,z.sp2)
+
+##perform background statistics 
+bg.sp1tosp2<-humboldt.background.stat(g2e=zz.NOT, rep = 100, sim.dir = 1, env.reso=0.083333, kern.smooth = 1, correct.env = F, R = 100, run.silent.bak = F)
+bg.sp2tosp1<-humboldt.background.stat(g2e=zz.NOT, rep = 100, sim.dir = 2, env.reso=0.083333, kern.smooth = 1, correct.env = F, R = 100, run.silent.bak = F)
+
+bgsp1tosp2= bg.sp1tosp2$sim
+bg.sp1tosp2$obs
+
+bgsp2tosp1=bg.sp2tosp1$sim
+bg.sp2tosp1$obs
+
+write.csv(bgsp1tosp2, "NOTyNDT/Resultados2021/llemniscatus_NOTbg.sp1tosp2.csv")
+write.csv(bgsp2tosp1, "NOTyNDT/Resultados2021/llemniscatus_NOTbg.sp2tosp1.csv")
+
+#plot background statistics 
+#humboldt.plot.density(bg.sp1tosp2,"D","Background 1->2") 
+#humboldt.plot.density(bg.sp2tosp1,"D","Background 2->1")  
+
+## run equivalence statistic
+a<- humboldt.equivalence.stat(z1,z2,rep=100,kern.smooth=1)
+a$obs$D
+a$obs$I
+a$p.D
+a$p.I
+
+NOT.rep = a$sim
+write.csv(NOT.rep, "NOTyNDT/Resultados2021/llemniscatus_NOTequivalence.csv")
+
+##plot equivalence statistic y background
+x11()
+par(mfrow = c(2,2)) 
+humboldt.plot.histrogram(bg.sp1tosp2,"I","Background n->s")
+humboldt.plot.histrogram(bg.sp2tosp1,"I","Background s->n") 
+humboldt.plot.histrogram(a,"D","Equivalence") 
+humboldt.plot.histrogram(a,"I","Equivalence") 
+
+
+#####NDT
+setwd("E:/Documents/")
+
+env1 = read.csv("NOTyNDT/VARIABLES/Env_LiolemN.csv")
+env2 = read.csv("NOTyNDT/VARIABLES/Env_LiolemS.csv")
+
+sp1 = read.csv("NOTyNDT/Registros/Liolaemus_lemiscatus_n.csv")
+sp2 = read.csv("NOTyNDT/Registros/Liolaemus_lemiscatus_s.csv")
+
+## remove NAs and make sure all variables are imported as numbers
+env1<-humboldt.scrub.env(env1)
+env2<-humboldt.scrub.env(env2)
+
+reduc.vars<- humboldt.top.env(env1=env1,env2=env2,sp1=sp1,sp2=sp2,rarefy.dist=0, rarefy.units="km", env.reso=0.083333,learning.rt1=0.01,learning.rt2=0.01,e.var=(3:21),pa.ratio=4,steps1=10,steps2=10,method="contrib",contrib.greater=5)
+
+##Adjust the number of variables input for e.vars after reduction to only important variables
+num.var.e<-ncol(reduc.vars$env1)
+num.var.e
+
+###convert geographic space to e-space
+zz.NDT<-humboldt.g2e(env1=reduc.vars$env1, env2=reduc.vars$env2, sp1=sp1, sp2=sp2, reduce.env = 0, reductype = "PCA", non.analogous.environments = "NO", e.var=c(3:num.var.e),  col.env = e.var, env.trim= T, env.trim.type="RADIUS", trim.buffer.sp1 = 50, trim.buffer.sp2 = 50, rarefy.dist = 10, rarefy.units="km", env.reso=0.083333, kern.smooth = 1, R = 100, run.silent = F)
+
+##store espace scores for sp1 and environments 1,2 and both environments combined output from humboldt.g2e
+scores.env1<-zz.NDT$scores.env1[1:2]
+scores.env2<-zz.NDT$scores.env2[1:2]
+scores.env12<- rbind(zz.NDT$scores.env1[1:2],zz.NDT$scores.env2[1:2])
+scores.sp1<-zz.NDT$scores.sp1[1:2]
+scores.sp2<-zz.NDT$scores.sp2[1:2]
+
+## run create a grid of Environmental Space Function
+z1<- humboldt.grid.espace(scores.env12,scores.env1,scores.sp1,kern.smooth=1,R=100)
+z2<- humboldt.grid.espace(scores.env12,scores.env2,scores.sp2,kern.smooth=1,R=100)
+
+## mesure niche similarity. nae= "no" porque arriba ya se quitaron los ambientes no analogos
+NDT = humboldt.niche.similarity(z1 = z1, z2, correct.env = F, nae = "NO")
+NDT$D
+NDT$I
+
+
+## run create a grid of Environmental Space Function
+z.sp1<- humboldt.grid.espace(scores.env12,scores.env1,scores.sp1,kern.smooth=1,R=100)
+z.sp2<- humboldt.grid.espace(scores.env12,scores.env2,scores.sp2,kern.smooth=1,R=100)
+z.env1<- humboldt.grid.espace(scores.env12,scores.env1,scores.env1,kern.smooth=1,R=100)
+z.env2<- humboldt.grid.espace(scores.env12,scores.env2,scores.env2,kern.smooth=1,R=100)
+
+ee<- humboldt.espace.correction(z.env1,z.env2,z.sp1,z.sp2)
+
+##perform background statistics 
+bg.sp1tosp2<-humboldt.background.stat(g2e=zz.NDT, rep = 100, sim.dir = 1, env.reso=0.083333, kern.smooth = 1, correct.env = F, R = 100, run.silent.bak = F)
+bg.sp2tosp1<-humboldt.background.stat(g2e=zz.NDT, rep = 100, sim.dir = 2, env.reso=0.083333, kern.smooth = 1, correct.env = F, R = 100, run.silent.bak = F)
+
+bgsp1tosp2= bg.sp1tosp2$sim
+bg.sp1tosp2$obs
+
+bgsp2tosp1=bg.sp2tosp1$sim
+bg.sp2tosp1$obs
+
+write.csv(bgsp1tosp2, "NOTyNDT/Resultados2021/llemniscatus_NDTbg.sp1tosp2.csv")
+write.csv(bgsp2tosp1, "NOTyNDT/Resultados2021/llemniscatus_NDTbg.sp2tosp1.csv")
+
+## run equivalence statistic
+a<- humboldt.equivalence.stat(z1,z2,rep=100,kern.smooth=1)
+a$obs$D
+a$obs$I
+
+NOT.rep = a$sim
+write.csv(NOT.rep, "NOTyNDT/Resultados2021/llemniscatus_NDTequivalence.csv")
+
+##plot equivalence statistic y background
+x11()
+par(mfrow = c(2,2)) 
+humboldt.plot.histrogram(bg.sp1tosp2,"I","Background n->s")
+humboldt.plot.histrogram(bg.sp2tosp1,"I","Background s->n") 
+humboldt.plot.histrogram(a,"D","Equivalence") 
+humboldt.plot.histrogram(a,"I","Equivalence") 
+
+#repeat for all species 
